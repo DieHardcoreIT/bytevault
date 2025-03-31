@@ -1,0 +1,62 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ByteVault</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div class="main-container">
+    <div class="content-box">
+        <h1>ByteVault</h1>
+        <div class="section">
+            <h2>Generate Key File</h2>
+            <form id="uploadForm">
+                <input type="file" id="fileInput" name="file" required />
+                <button type="submit">Generate Key File</button>
+            </form>
+            <div class="status-box">
+                <!-- Info text after successful key generation -->
+                <p id="keyFileInfo" class="info-text"></p>
+            </div>
+        </div>
+        <div class="section">
+            <h2>Reconstruct File</h2>
+            <form id="reconstructForm">
+                <input type="file" id="keyFileInput" name="keyFile" required />
+                <button type="submit">Reconstruct File</button>
+            </form>
+            <div class="status-box">
+                <!-- General status/error messages -->
+                <p id="status" class="error-text"></p>
+            </div>
+        </div>
+    </div>
+    <div class="info-box">
+        <h2>How It Works</h2>
+        <p>
+            ByteVault is a project that allows you to securely store and
+            reconstruct files using a unique key-based system. Upload a file to
+            generate a key file, and use the key file along with the server data
+            to reconstruct the original file.
+        </p>
+        <h2>Important Notes</h2>
+        <p>
+            <strong>Validity:</strong>
+
+            <span id="validity-info">
+                Key files are valid for a maximum of 7 days. After that, the server
+                data required for reconstruction will no longer be available.
+            </span>
+        </p>
+        <p>
+            <strong>Privacy Notice:</strong> All processing happens locally in
+            your browser. No files or parts of files are uploaded to or stored on
+            the server at any time.
+        </p>
+    </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>

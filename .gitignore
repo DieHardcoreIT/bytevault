@@ -1,0 +1,47 @@
+﻿# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+package-lock.json # Optional: if you don't commit it
+yarn.lock         # Optional: if you don't commit it
+pnpm-lock.yaml    # Optional: if you don't commit it
+
+# WebStorm IDE specific
+.idea/
+
+# Build artifacts
+dist/
+build/
+out/
+coverage/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# OS generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Optional: Test reports
+junit.xml
+
+#
+server_data/
+/config.json
