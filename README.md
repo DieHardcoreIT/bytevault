@@ -1,124 +1,237 @@
-﻿# ByteVault 🔐
+# ByteVault
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A configurable web application demonstrating a concept for secure file handling using time-sensitive or persistent server data and local browser processing. Store a file reference (key) and reconstruct it later using server data, all without uploading your original file! ✨
-
-## 🤔 How It Works
-
-ByteVault uses a unique, locally processed approach:
-
-1.  **Server Setup:**
-    *   The Node.js server reads a `config.json` file on startup.
-    *   **Mode Selection (`serverDataMode`):**
-        *   `"daily"`: The server generates a *new*, large, random data file (`server_data_YYYY-MM-DD.bin`) every day at midnight. Old files are automatically deleted based on the `daysToKeep` setting in `config.json` (set to `-1` to keep forever).
-        *   `"single"`: The server creates and uses *only one* fixed data file (`server_data.bin`). This file is never deleted automatically.
-    *   The server makes this data file(s) available for download via an API endpoint.
-
-2.  **Generate Key File:**
-    *   You select a file on your computer.
-    *   Your browser requests the *appropriate* server data file via the `/download/...` endpoint.
-        *   In `"daily"` mode, it requests the file for the *current date*.
-        *   In `"single"` mode, it requests the fixed `server_data.bin` (the date in the request is ignored by the server).
-    *   Locally, in your browser, JavaScript finds the position (index) of *each byte* of your original file within the downloaded server data.
-    *   These positions, along with the date used for the request (important for `"daily"` mode reconstruction) and the original file extension, are saved into a small JSON file (`yourfile_key.json`). This is your "key".
-    *   **Crucially, your original file never leaves your computer.** Only the key file is generated.
-
-3.  **Reconstruct File:**
-    *   You upload the `_key.json` file you previously generated.
-    *   The browser reads the `date` stored inside the key file.
-    *   It requests the server data file via `/download/[date_from_key]`.
-        *   In `"daily"` mode, the server attempts to find the data file matching that specific date.
-        *   In `"single"` mode, the server ignores the date and serves the fixed `server_data.bin`.
-    *   If the required server data exists (it might have been deleted in `"daily"` mode if the key is too old), it's sent to your browser.
-    *   Locally, JavaScript uses the positions stored in the key file to look up the original bytes within the downloaded server data.
-    *   These bytes are reassembled in the correct order, and you are prompted to download the reconstructed file.
-
-## ✨ Key Features
-
-*   **🔒 Privacy Focused:** Your original files are **never** uploaded to the server. All processing happens locally in your browser.
-*   **⚙️ Configurable Modes:** Choose between daily rotating data files (`"daily"`) or a single persistent data file (`"single"`) via `config.json`.
-*   **⏱️ Time-Limited Access (Daily Mode):** In `"daily"` mode, keys are tied to daily server data. Configure retention (`daysToKeep`) or set to `-1` for indefinite storage.
-*   **♾️ Persistent Access (Single Mode):** In `"single"` mode, keys remain valid as long as the single server data file exists.
-*   **💻 Simple Web Interface:** Easy-to-use interface for generating keys and reconstructing files.
-*   **🤖 Automated Server Management:** Node.js backend manages data file creation and cleanup (in daily mode) automatically based on `config.json`.
-
-## 💻 Tech Stack
-
-*   **Backend:** Node.js, Express.js
-*   **Scheduled Tasks:** node-cron (for daily mode)
-*   **Frontend:** HTML, CSS, Vanilla JavaScript (ES6+)
-*   **File Handling:** FileReader API, Blob, ArrayBuffer, Uint8Array
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-*   Node.js (v14 or later recommended)
-*   npm or yarn
-
-### Installation
-
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/DieHardcoreIT/bytevault.git # Replace with your repo URL
-    cd bytevault
-    ```
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    # or
-    yarn install
-    ```
-
-### Configuration
-
-1.  A `config.json` file will be created automatically in the project root if it doesn't exist upon first run, with default settings:
-    ```json
-    {
-      "daysToKeep": 7,
-      "serverDataMode": "daily"
-    }
-    ```
-2.  **Edit `config.json`** to your desired settings:
-    *   `daysToKeep`: (Only applies when `serverDataMode` is `"daily"`)
-        *   Number of days to keep daily `.bin` files (e.g., `7`).
-        *   Set to `-1` to keep daily files indefinitely.
-        *   Set to `0` or `1` to keep only the current day's file.
-    *   `serverDataMode`:
-        *   `"daily"`: Generate a new file each day, delete old ones based on `daysToKeep`.
-        *   `"single"`: Use one fixed `server_data.bin` file, never delete automatically.
-
-### Running the Application
-
-1.  **Start the server:**
-    ```bash
-    node server.js
-    ```
-    *(The server will log the mode it's running in and the configuration it loaded)*
-2.  **Access the web interface:**
-    Open your browser and navigate to `http://localhost:3000` (or the port specified in `server.js`).
-
-The server will automatically create the `server_data` directory and the necessary data file(s) based on the configuration.
-
-## ⚠️ Important Notes
-
-*   **Key Validity:**
-    *   In `"daily"` mode, key files are only valid as long as the corresponding daily server data exists (controlled by `daysToKeep`).
-    *   In `"single"` mode, key files remain valid as long as the `server_data.bin` file exists on the server.
-*   **Server Data:** The `server_data*.bin` files are filled with random bytes. They do **not** contain any part of user files.
-*   **Byte Not Found:** If a byte from your original file doesn't happen to exist in the relevant server data file, key generation will fail for that file. This is a limitation of this specific concept.
-*   **Performance:** Processing very large files or very large server data files directly in the browser might be slow or memory-intensive.
-*   **Security Concept:** This is a conceptual project. While it avoids uploading the original file, the security relies on the key file and the *correct* server data file not being compromised simultaneously. The `"daily"` mode adds a layer of temporal security by default.
-
-## 🤝 Contributing
-
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/DieHardcoreIT/bytevault/issues).
-
-## 📜 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+ByteVault is a small, configurable web application that demonstrates a concept for file-based “keys”.
+The original file is never uploaded. Instead, a local key is generated that allows you to reconstruct
+the file later using server-side random data.
 
 ---
 
-Happy Vaulting! 🎉
+## Table of contents
+
+* [Idea in short](#idea-in-short)
+* [How it works](#how-it-works)
+* [Operating modes](#operating-modes)
+* [Features](#features)
+* [Limitations and security model](#limitations-and-security-model)
+* [Installation](#installation)
+* [Configuration](#configuration)
+* [Running the application](#running-the-application)
+* [Notes](#notes)
+* [Contributing](#contributing)
+* [License](#license)
+
+---
+
+## Idea in short
+
+* The server maintains one or more binary files with random bytes (`server_data*.bin`).
+* The browser downloads this data and searches for the position of each byte of the original file
+  in the server data.
+* The byte positions plus metadata (date, file extension) are stored in a small JSON file
+  (`*_key.json`).
+* Later, the original file can be reconstructed locally in the browser from the matching
+  `server_data*.bin` file and the key.
+* The original file never leaves the user’s machine.
+
+This repository is a proof of concept, not a production-ready solution.
+
+---
+
+## How it works
+
+### 1. Server side
+
+* On startup, the Node.js server reads a `config.json` file.
+* Depending on `serverDataMode` it either:
+
+  * creates a new random data file per day, or
+  * uses a single persistent data file.
+* The file(s) live in the `server_data` directory and are exposed via a download route.
+
+### 2. Generating the key file
+
+* The user selects a local file in the browser.
+* The browser requests the corresponding server data file via `/download/...`:
+
+  * in mode `"daily"`: the file for the current date,
+  * in mode `"single"`: the fixed `server_data.bin` (the date in the URL is ignored server-side).
+* In the browser:
+
+  * the original file is read (FileReader, ArrayBuffer, Uint8Array),
+  * for each byte of the original file, the index of that byte value is searched in the
+    server data array,
+  * the found positions, the used date, and the original file extension are stored in a
+    JSON file (`<name>_key.json`).
+
+The original file is never sent to the server.
+
+### 3. Reconstructing the file
+
+* The user uploads the previously generated `_key.json`.
+* The browser reads from it:
+
+  * the date (relevant for `"daily"`),
+  * the byte positions,
+  * the original file extension.
+* The browser requests the matching server data via `/download/[date_from_key]`:
+
+  * `"daily"`: tries to load the file for that specific date,
+  * `"single"`: ignores the date and always serves `server_data.bin`.
+* If the corresponding server data file still exists:
+
+  * the bytes at the stored positions are read,
+  * they are reassembled in the original order,
+  * a Blob is created and offered for download.
+
+---
+
+## Operating modes
+
+The mode is controlled via `serverDataMode` in `config.json`.
+
+* `"daily"`
+
+  * A file `server_data_YYYY-MM-DD.bin` is created per day.
+  * Old files are deleted based on `daysToKeep` (unless `daysToKeep = -1`).
+  * Keys are effectively usable only as long as the matching daily file exists.
+
+* `"single"`
+
+  * A single file `server_data.bin` is used.
+  * This file is not deleted automatically.
+  * Keys remain valid as long as this file exists and is unchanged.
+
+---
+
+## Features
+
+* Original files are never uploaded; content-related processing happens in the browser.
+* Server data is created and managed automatically:
+
+  * daily rotation including cleanup, or
+  * a single persistent file.
+* Simple web UI to:
+
+  * generate key files from local files,
+  * reconstruct original files from key + server data.
+* Configuration via a small JSON file.
+
+---
+
+## Limitations and security model
+
+This project is a concept, not a full security product. Important aspects:
+
+* Security depends on:
+
+  * the key (`*_key.json`) and
+  * the corresponding server data file
+    not being compromised together.
+* In `"daily"` mode, the limited lifetime of daily files reduces the time window
+  for reconstruction.
+* `server_data*.bin` only contains random bytes; it does not include any user data.
+* Concept limitation:
+
+  * If a specific byte value of the original file does not appear in the relevant
+    server data file, a complete key cannot be generated.
+* Performance:
+
+  * Very large original files or very large `server_data*.bin` files can cause
+    high memory and CPU usage in the browser.
+* Integrity:
+
+  * Any change to `server_data*.bin` after key generation will break existing keys.
+
+---
+
+## Installation
+
+### Requirements
+
+* Node.js (recommended: v14 or newer)
+* npm or yarn
+
+### Steps
+
+```bash
+git clone https://github.com/DieHardcoreIT/bytevault.git
+cd bytevault
+
+npm install
+# or
+yarn install
+```
+
+---
+
+## Configuration
+
+On first run, a `config.json` file is created automatically in the project root if it
+does not exist:
+
+```json
+{
+  "daysToKeep": 7,
+  "serverDataMode": "daily"
+}
+```
+
+Adjustable fields:
+
+* `daysToKeep` (only relevant for `"daily"`):
+
+  * number of days to keep daily files (e.g. `7`),
+  * `-1`: files are never deleted automatically,
+  * `0` or `1`: only keep the current day’s file.
+* `serverDataMode`:
+
+  * `"daily"`: new file per day, automatic cleanup based on `daysToKeep`,
+  * `"single"`: one persistent `server_data.bin`, no automatic deletion.
+
+---
+
+## Running the application
+
+```bash
+node server.js
+```
+
+The server logs the active mode and the loaded configuration.
+
+By default, the frontend is available at `http://localhost:3000`
+(the port can be changed in `server.js`).
+
+On startup:
+
+* the `server_data` directory is created if it does not exist,
+* the appropriate server data file is created or reused depending on the mode,
+* in `"daily"` mode, creation and cleanup jobs are scheduled.
+
+---
+
+## Notes
+
+* Key validity:
+
+  * `"daily"`: keys are only valid as long as the server data file for the stored date exists,
+  * `"single"`: keys stay valid as long as `server_data.bin` is available and unchanged.
+* If, during key generation, a byte from the original file cannot be found in the
+  server data file, the process fails.
+* This repository is a technical demonstration of an approach for “indirect” file
+  storage and reconstruction.
+
+---
+
+## Contributing
+
+Issues, bug reports, and pull requests are welcome.
+Open items and ideas can be found in the
+[issues section](https://github.com/DieHardcoreIT/bytevault/issues).
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
